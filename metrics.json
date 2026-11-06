@@ -1,0 +1,115 @@
+{
+  "trained_at": "2026-11-06 09:50 UTC",
+  "algorithm": "RandomForestClassifier",
+  "sklearn_version": "1.9.1",
+  "data_source": "synthetic",
+  "model_params": {
+    "n_estimators": 200,
+    "max_depth": 12,
+    "min_samples_leaf": 3,
+    "class_weight": "balanced",
+    "random_state": 42
+  },
+  "dataset": {
+    "rows": 3000,
+    "genuine": 1780,
+    "fake": 1220,
+    "features": 14
+  },
+  "split": {
+    "test_size": 0.2,
+    "train_rows": 2400,
+    "test_rows": 600
+  },
+  "metrics": {
+    "accuracy": 0.94,
+    "precision": 0.9228,
+    "recall": 0.9303,
+    "f1": 0.9265
+  },
+  "cross_validation": {
+    "folds": 5,
+    "accuracy_mean": 0.9447,
+    "accuracy_std": 0.0055
+  },
+  "baseline_accuracy": 0.5933,
+  "confusion_matrix": {
+    "tn": 337,
+    "fp": 19,
+    "fn": 17,
+    "tp": 227
+  },
+  "feature_importances": [
+    {
+      "feature": "account_age_days",
+      "label": "Account age",
+      "importance": 0.282
+    },
+    {
+      "feature": "avg_comments_per_post",
+      "label": "Average comments per post",
+      "importance": 0.149
+    },
+    {
+      "feature": "username_digits",
+      "label": "Digits in username",
+      "importance": 0.1441
+    },
+    {
+      "feature": "engagement_rate",
+      "label": "Engagement rate",
+      "importance": 0.1248
+    },
+    {
+      "feature": "posts",
+      "label": "Posts",
+      "importance": 0.0594
+    },
+    {
+      "feature": "digit_ratio",
+      "label": "Digit share of username",
+      "importance": 0.0592
+    },
+    {
+      "feature": "followers_following_ratio",
+      "label": "Followers / following ratio",
+      "importance": 0.0439
+    },
+    {
+      "feature": "followers",
+      "label": "Followers",
+      "importance": 0.0317
+    },
+    {
+      "feature": "following",
+      "label": "Following",
+      "importance": 0.0294
+    },
+    {
+      "feature": "avg_likes_per_post",
+      "label": "Average likes per post",
+      "importance": 0.0255
+    },
+    {
+      "feature": "posts_per_day",
+      "label": "Posts per day",
+      "importance": 0.0244
+    },
+    {
+      "feature": "username_length",
+      "label": "Username length",
+      "importance": 0.0165
+    },
+    {
+      "feature": "has_bio",
+      "label": "Bio",
+      "importance": 0.0069
+    },
+    {
+      "feature": "has_profile_pic",
+      "label": "Profile picture",
+      "importance": 0.0032
+    }
+  ],
+  "note": "Scores come from a SYNTHETIC dataset and do not represent real-world detection accuracy."
+}

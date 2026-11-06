@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}FAKE ACCOUNT DETECTOR | Detect Fake Social Media Accounts Using Machine Learning{% endblock %}
+
+{% block content %}
+
+{# ---------- Small helpers that build one form field each ---------- #}
+{% macro number_field(name, label, icon, placeholder, step='1', help='') %}
+<div class="col-md-6">
+  <label for="{{ name }}" class="form-label">{{ label }}</label>
+  <div class="input-group has-validation">
+    <span class="input-group-text"><i class="bi {{ icon }}"></i></span>
+    <input type="number" inputmode="decimal" min="0" step="{{ step }}" required
+           class="form-control{% if errors.get(name) %} is-invalid{% endif %}"
+           id="{{ name }}" name="{{ name }}" value="{{ form.get(name, '') }}" placeholder="{{ placeholder }}">
+    <div class="invalid-feedback">{{ errors.get(name) or 'Please enter a number that is 0 or more.' }}</div>
+  </div>
+  {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro choice_field(name, label, icon) %}
+<div class="col-md-6">
+  <label for="{{ name }}" class="form-label">{{ label }}</label>
+  <div class="input-group has-validation">
+    <span class="input-group-text"><i class="bi {{ icon }}"></i></span>
+    <select class="form-select{% if errors.get(name) %} is-invalid{% endif %}" id="{{ name }}" name="{{ name }}" required>
+      <option value="" disabled {% if not form.get(name) %}selected{% endif %}>Select...</option>
+      <option value="yes" {% if form.get(name) == 'yes' %}selected{% endif %}>Yes</option>
+      <option value="no" {% if form.get(name) == 'no' %}selected{% endif %}>No</option>
+    </select>
+    <div class="invalid-feedback">{{ errors.get(name) or 'Please choose Yes or No.' }}</div>
+  </div>
+</div>
+{% endmacro %}
+
+<!-- ======================= HERO ======================= -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center gy-5">
+      <div class="col-lg-7 reveal">
+        <span class="pill"><i class="bi bi-cpu"></i> Machine Learning &middot; Cybersecurity</span>
+        <h1 class="hero-title">FAKE ACCOUNT <span class="text-gradient">DETECTOR</span></h1>
+        <p class="hero-tagline">Detect Fake Social Media Accounts Using Machine Learning</p>
+        <p class="hero-text">
+          Enter a few public details about a social media account. A Random Forest model compares them with
+          patterns learned from thousands of accounts and estimates how likely the account is to be fake.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#analyze" class="btn btn-gradient btn-lg"><i class="bi bi-search"></i> Analyze an Account</a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-glow btn-lg"><i class="bi bi-speedometer2"></i> View Dashboard</a>
+        </div>
+      </div>
+
+      <div class="col-lg-5 reveal">
+        <div class="glass-card preview-card">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="preview-title"><i class="bi bi-broadcast"></i> Example output</span>
+            <span class="badge text-bg-secondary">Demo</span>
+          </div>
+          <div class="preview-verdict"><i class="bi bi-exclamation-triangle-fill"></i> FAKE ACCOUNT</div>
+          <div class="small text-muted mb-1">Estimated fake probability</div>
+          <div class="progress prob-progress mb-3"><div class="progress-bar bar-fake" style="width: 91%"></div></div>
+          <ul class="preview-list">
+            <li><i class="bi bi-x-circle-fill text-danger"></i> No profile picture or bio</li>
+            <li><i class="bi bi-x-circle-fill text-danger"></i> Follows 3,000 accounts, 5 follow back</li>
+            <li><i class="bi bi-x-circle-fill text-danger"></i> Username with many digits</li>
+          </ul>
+          <div class="small text-muted">Illustration only. Real results appear after you analyze an account.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ANIMATED STATS ======================= -->
+<section class="py-4">
+  <div class="container">
+    <div class="row g-3">
+      <div class="col-6 col-lg-3 reveal">
+        <div class="stat-card">
+          <div class="stat-number"><span data-count="{{ stats.features }}">0</span></div>
+          <div class="stat-label">Features analyzed per account</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 reveal">
+        <div class="stat-card">
+          <div class="stat-number">
+            {% if stats.rows %}<span data-count="{{ stats.rows }}">0</span>{% else %}N/A{% endif %}
+          </div>
+          <div class="stat-label">Synthetic training accounts</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 reveal">
+        <div class="stat-card">
+          <div class="stat-number">
+            {% if stats.trees %}<span data-count="{{ stats.trees }}">0</span>{% else %}N/A{% endif %}
+          </div>
+          <div class="stat-label">Decision trees in the forest</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 reveal">
+        <div class="stat-card">
+          <div class="stat-number">
+            {% if stats.accuracy_pct is not none %}<span data-count="{{ stats.accuracy_pct }}" data-decimals="1" data-suffix="%">0</span>{% else %}N/A{% endif %}
+          </div>
+          <div class="stat-label">Accuracy on synthetic test data*</div>
+        </div>
+      </div>
+    </div>
+    <p class="text-muted small mt-3 mb-0">
+      * Measured on computer-generated data. This does not represent real-world detection accuracy.
+    </p>
+  </div>
+</section>
+
+<!-- ======================= HOW IT WORKS ======================= -->
+<section class="py-5" id="how-it-works">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="pill"><i class="bi bi-diagram-3"></i> Project information</span>
+      <h2>How it works</h2>
+      <p>Four simple steps from account details to a prediction.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card step-card h-100">
+          <div class="step-icon"><i class="bi bi-ui-checks-grid"></i></div>
+          <h3>1. Enter details</h3>
+          <p>Type the username, followers, following, posts, account age, and engagement numbers.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card step-card h-100">
+          <div class="step-icon"><i class="bi bi-funnel"></i></div>
+          <h3>2. Validate &amp; process</h3>
+          <p>Inputs are checked, then ratios such as followers-to-following and engagement are calculated.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card step-card h-100">
+          <div class="step-icon"><i class="bi bi-cpu"></i></div>
+          <h3>3. Model predicts</h3>
+          <p>A trained Random Forest of {{ stats.trees or 200 }} decision trees votes on genuine or fake.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card step-card h-100">
+          <div class="step-icon"><i class="bi bi-clipboard-data"></i></div>
+          <h3>4. Read the result</h3>
+          <p>See the prediction, probability, key indicators and a short explanation.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= SIGNALS ======================= -->
+<section class="py-5">
+  <div class="container">
+    <div class="section-head reveal">
+      <h2>Signals the model looks at</h2>
+      <p>Fake accounts often leave patterns in these numbers.</p>
+    </div>
+    <div class="row g-3">
+      {% for icon, title, text in [
+        ('bi-people', 'Followers vs following', 'Following thousands but followed by few is a classic spam pattern.'),
+        ('bi-calendar-event', 'Account age', 'Many fake accounts are brand new and created in batches.'),
+        ('bi-image', 'Profile completeness', 'A missing profile picture or bio can signal a throwaway account.'),
+        ('bi-chat-heart', 'Engagement', 'Many followers but almost no likes or comments can mean bought followers.'),
+        ('bi-hash', 'Username pattern', 'Long strings of digits often point to auto-generated names.'),
+        ('bi-speedometer', 'Posting activity', 'No posts at all, or an extreme posting rate, can indicate inactivity or automation.')
+      ] %}
+      <div class="col-md-6 col-lg-4 reveal">
+        <div class="glass-card signal-card h-100">
+          <i class="bi {{ icon }}"></i>
+          <div><h3>{{ title }}</h3><p>{{ text }}</p></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ANALYSIS FORM ======================= -->
+<section class="py-5" id="analyze">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="pill"><i class="bi bi-search"></i> Account analysis</span>
+      <h2>Analyze an account</h2>
+      <p>Fill in the details below. Not sure what to type? Use one of the example buttons.</p>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-9 col-xl-8">
+        <div class="glass-card form-card reveal" data-scroll="{{ 'true' if (errors or form_error) else 'false' }}">
+
+          {% if not model_ready %}
+          <div class="alert alert-warning d-flex gap-2" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>The trained model was not found. Stop the server, run <code>python train_model.py</code>, then start the app again.</div>
+          </div>
+          {% endif %}
+
+          {% if form_error %}
+          <div class="alert alert-danger d-flex gap-2" role="alert">
+            <i class="bi bi-x-octagon-fill"></i><div>{{ form_error }}</div>
+          </div>
+          {% endif %}
+
+          {% if errors %}
+          <div class="alert alert-danger d-flex gap-2" role="alert">
+            <i class="bi bi-x-octagon-fill"></i>
+            <div>Please fix the {{ errors|length }} highlighted field{{ '' if errors|length == 1 else 's' }} below and try again.</div>
+          </div>
+          {% endif %}
+
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            <button type="button" class="btn btn-sm btn-outline-glow" data-sample="genuine"><i class="bi bi-person-check"></i> Fill genuine example</button>
+            <button type="button" class="btn btn-sm btn-outline-glow" data-sample="fake"><i class="bi bi-person-x"></i> Fill suspicious example</button>
+          </div>
+
+          <form id="analyzeForm" method="post" action="{{ url_for('analyze') }}" class="needs-validation" novalidate>
+            <div class="row g-3">
+
+              <div class="col-12">
+                <label for="username" class="form-label">Username</label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text">@</span>
+                  <input type="text" class="form-control{% if errors.get('username') %} is-invalid{% endif %}"
+                         id="username" name="username" value="{{ form.get('username', '') }}"
+                         placeholder="e.g. sarah.jones" maxlength="30" required autocomplete="off"
+                         pattern="@?[A-Za-z0-9._]{1,30}">
+                  <div class="invalid-feedback">{{ errors.get('username') or 'Use 1-30 letters, numbers, dots or underscores.' }}</div>
+                </div>
+                <div class="form-text">Without the @. The username length and number of digits are counted automatically.</div>
+              </div>
+
+              {{ number_field('followers', 'Number of followers', 'bi-people', 'e.g. 850') }}
+              {{ number_field('following', 'Number of following', 'bi-person-plus', 'e.g. 420') }}
+              {{ number_field('posts', 'Number of posts', 'bi-images', 'e.g. 310') }}
+              {{ number_field('account_age_days', 'Account age (days)', 'bi-calendar3', 'e.g. 1500', help='1 year is about 365 days.') }}
+              {{ choice_field('has_profile_pic', 'Has a profile picture?', 'bi-image') }}
+              {{ choice_field('has_bio', 'Has a bio?', 'bi-card-text') }}
+              {{ number_field('avg_likes_per_post', 'Average likes per post', 'bi-heart', 'e.g. 95', step='any') }}
+              {{ number_field('avg_comments_per_post', 'Average comments per post', 'bi-chat-dots', 'e.g. 8', step='any') }}
+
+            </div>
+
+            <div class="d-flex flex-wrap gap-3 mt-4">
+              <button type="submit" class="btn btn-gradient btn-lg flex-grow-1" id="analyzeButton">
+                <span class="button-label"><i class="bi bi-shield-check"></i> ANALYZE ACCOUNT</span>
+                <span class="button-loading d-none"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Analyzing...</span>
+              </button>
+              <button type="button" class="btn btn-outline-glow btn-lg" id="resetButton"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+            </div>
+          </form>
+
+          <div class="alert alert-info-soft mt-4 mb-0 small" role="note">
+            <i class="bi bi-info-circle"></i>
+            The model was trained on <strong>synthetic</strong> data for a hackathon demo. Treat results as an
+            estimate, and never use them alone to accuse a real person or account.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ code }} {{ title }} | FAKE ACCOUNT DETECTOR{% endblock %}
+
+{% block content %}
+<section class="page-section">
+  <div class="container text-center">
+    <div class="glass-card error-card mx-auto">
+      <div class="error-code text-gradient">{{ code }}</div>
+      <h1 class="h3">{{ title }}</h1>
+      <p class="text-muted">{{ message }}</p>
+      <div class="d-flex justify-content-center flex-wrap gap-3">
+        <a href="{{ url_for('index') }}" class="btn btn-gradient"><i class="bi bi-house-door"></i> Back to home</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-glow"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Fake Account Detector logo">
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 56 13v17c0 15-10 25-24 30C18 55 8 45 8 30V13z" fill="url(#shield)"/>
+  <circle cx="32" cy="25" r="7.5" fill="#0a0f24" fill-opacity="0.9"/>
+  <path d="M17.5 46c1.8-8.4 7.6-12.5 14.5-12.5S44.7 37.6 46.5 46c-4.2 4.2-9.4 6.9-14.5 8.7C26.900 52.900 21.700 50.200 17.500 46z" fill="#0a0f24" fill-opacity="0.9"/>
+</svg>

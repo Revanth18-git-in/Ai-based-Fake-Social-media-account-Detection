@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | FAKE ACCOUNT DETECTOR{% endblock %}
+
+{% block content %}
+<section class="page-section">
+  <div class="container">
+
+    <div class="section-head reveal">
+      <span class="pill"><i class="bi bi-speedometer2"></i> Model performance dashboard</span>
+      <h1 class="h2">Dashboard</h1>
+      <p>Session statistics update each time you analyze an account. They reset when the app restarts.</p>
+    </div>
+
+    <!-- ---------- Session statistics ---------- -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-search"></i></div>
+          <div class="stat-number"><span data-count="{{ live.total }}">0</span></div>
+          <div class="stat-label">Total analyzed accounts</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg">
+        <div class="stat-card">
+          <div class="stat-icon text-danger"><i class="bi bi-person-x"></i></div>
+          <div class="stat-number"><span data-count="{{ live.fake }}">0</span></div>
+          <div class="stat-label">Fake accounts detected</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg">
+        <div class="stat-card">
+          <div class="stat-icon text-success"><i class="bi bi-person-check"></i></div>
+          <div class="stat-number"><span data-count="{{ live.genuine }}">0</span></div>
+          <div class="stat-label">Genuine accounts detected</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-percent"></i></div>
+          <div class="stat-number"><span data-count="{{ live.fake_percentage }}" data-decimals="1" data-suffix="%">0</span></div>
+          <div class="stat-label">Fake account percentage</div>
+        </div>
+      </div>
+      <div class="col-12 col-lg">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-bullseye"></i></div>
+          <div class="stat-number">
+            {% if metrics %}<span data-count="{{ (metrics.metrics.accuracy * 100)|round(1) }}" data-decimals="1" data-suffix="%">0</span>{% else %}N/A{% endif %}
+          </div>
+          <div class="stat-label">Model accuracy (synthetic test set)</div>
+        </div>
+      </div>
+    </div>
+
+    {% if not metrics %}
+    <div class="alert alert-warning d-flex gap-2" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>Model metrics are not available yet. Run <code>python train_model.py</code> and refresh this page.</div>
+    </div>
+    {% else %}
+
+    <div class="alert alert-info-soft" role="note">
+      <i class="bi bi-shield-exclamation"></i>
+      These scores come from a <strong>synthetic</strong> dataset of {{ '{:,}'.format(metrics.dataset.rows) }} accounts.
+      They do <strong>not</strong> show how accurate the model would be on real social media accounts.
+    </div>
+
+    <!-- ---------- Charts ---------- -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-7">
+        <div class="glass-card h-100">
+          <h2 class="h5 mb-3"><i class="bi bi-bar-chart"></i> Classification performance (test set)</h2>
+          <div class="chart-box"><canvas id="metricsChart"></canvas></div>
+          <div class="row text-center g-2 mt-3 small">
+            <div class="col-6 col-md-3"><span class="text-muted d-block">Precision</span><strong>{{ (metrics.metrics.precision * 100)|round(1) }}%</strong></div>
+            <div class="col-6 col-md-3"><span class="text-muted d-block">Recall</span><strong>{{ (metrics.metrics.recall * 100)|round(1) }}%</strong></div>
+            <div class="col-6 col-md-3"><span class="text-muted d-block">F1-score</span><strong>{{ (metrics.metrics.f1 * 100)|round(1) }}%</strong></div>
+            <div class="col-6 col-md-3"><span class="text-muted d-block">Cross-validation</span><strong>{{ (metrics.cross_validation.accuracy_mean * 100)|round(1) }}%</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="glass-card h-100 text-center">
+          <h2 class="h5 mb-3"><i class="bi bi-pie-chart"></i> This session's results</h2>
+          {% if live.total %}
+          <div class="chart-box chart-box-sm"><canvas id="sessionChart"></canvas></div>
+          {% else %}
+          <div class="empty-state"><i class="bi bi-inbox"></i><p>No accounts analyzed yet.</p>
+            <a href="{{ url_for('index') }}#analyze" class="btn btn-sm btn-gradient">Analyze an account</a></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- Confusion matrix + feature importance ---------- -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <div class="glass-card h-100">
+          <h2 class="h5 mb-3"><i class="bi bi-grid-3x3-gap"></i> Confusion matrix</h2>
+          {% if images.confusion_matrix %}
+          <img src="{{ url_for('static', filename='images/confusion_matrix.png') }}" class="img-fluid rounded mb-3" alt="Confusion matrix chart">
+          {% endif %}
+          <table class="table table-sm table-borderless align-middle mb-0 matrix-table">
+            <thead><tr><th></th><th>Predicted genuine</th><th>Predicted fake</th></tr></thead>
+            <tbody>
+              <tr><th>Actually genuine</th><td>{{ metrics.confusion_matrix.tn }}</td><td>{{ metrics.confusion_matrix.fp }}</td></tr>
+              <tr><th>Actually fake</th><td>{{ metrics.confusion_matrix.fn }}</td><td>{{ metrics.confusion_matrix.tp }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="glass-card h-100">
+          <h2 class="h5 mb-3"><i class="bi bi-sliders"></i> Feature importance</h2>
+          {% if images.feature_importance %}
+          <img src="{{ url_for('static', filename='images/feature_importance.png') }}" class="img-fluid rounded" alt="Feature importance chart">
+          {% else %}
+          {% for item in metrics.feature_importances[:8] %}
+          <div class="mb-2">
+            <div class="d-flex justify-content-between small"><span>{{ item.label }}</span><strong>{{ (item.importance * 100)|round(1) }}%</strong></div>
+            <div class="progress prob-progress thin"><div class="progress-bar bar-accent" data-width="{{ item.importance * 300 }}" style="width: 0%"></div></div>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- Model info ---------- -->
+    <div class="glass-card mb-4">
+      <h2 class="h5 mb-3"><i class="bi bi-info-circle"></i> Model information</h2>
+      <div class="row g-3 small">
+        <div class="col-6 col-lg-3"><span class="text-muted d-block">Algorithm</span><strong>Random Forest ({{ metrics.model_params.n_estimators }} trees)</strong></div>
+        <div class="col-6 col-lg-3"><span class="text-muted d-block">Training / test rows</span><strong>{{ '{:,}'.format(metrics.split.train_rows) }} / {{ '{:,}'.format(metrics.split.test_rows) }}</strong></div>
+        <div class="col-6 col-lg-3"><span class="text-muted d-block">Data source</span><strong>Synthetic (computer-generated)</strong></div>
+        <div class="col-6 col-lg-3"><span class="text-muted d-block">Trained at</span><strong>{{ metrics.trained_at }}</strong></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ---------- History ---------- -->
+    <div class="glass-card">
+      <h2 class="h5 mb-3"><i class="bi bi-clock-history"></i> Analysis history (current session)</h2>
+      {% if live.entries %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle history-table mb-0">
+          <thead>
+            <tr><th>#</th><th>Time</th><th>Username</th><th>Result</th><th>Fake probability</th><th>Followers</th><th>Following</th><th>Posts</th></tr>
+          </thead>
+          <tbody>
+            {% for row in live.entries %}
+            <tr>
+              <td>{{ row.number }}</td>
+              <td>{{ row.time }}</td>
+              <td>@{{ row.username }}</td>
+              <td>
+                {% if row.is_fake %}<span class="badge badge-fake">FAKE</span>{% else %}<span class="badge badge-genuine">GENUINE</span>{% endif %}
+              </td>
+              <td>{{ row.fake_probability }}%</td>
+              <td>{{ '{:,}'.format(row.followers) }}</td>
+              <td>{{ '{:,}'.format(row.following) }}</td>
+              <td>{{ '{:,}'.format(row.posts) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-inbox"></i><p>Your analyzed accounts will appear here.</p></div>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block vendor_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block page_data %}
+<script>window.DASHBOARD_DATA = {{ chart_data|tojson }};</script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}{{ result.label }} | FAKE ACCOUNT DETECTOR{% endblock %}
+
+{% block content %}
+<section class="page-section">
+  <div class="container">
+
+    <div class="section-head reveal">
+      <span class="pill"><i class="bi bi-clipboard-data"></i> Prediction result</span>
+      <h1 class="h2">Analysis of <span class="text-gradient">@{{ account.username }}</span></h1>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- ---------- Verdict ---------- -->
+      <div class="col-lg-7 reveal">
+        <div class="glass-card verdict-card {{ 'verdict-fake' if result.is_fake else 'verdict-genuine' }} h-100"
+             data-verdict="{{ 'FAKE' if result.is_fake else 'GENUINE' }}">
+          <div class="verdict-label">
+            {% if result.is_fake %}<i class="bi bi-exclamation-triangle-fill"></i>{% else %}<i class="bi bi-patch-check-fill"></i>{% endif %}
+            {{ result.label }}
+          </div>
+          <p class="verdict-sub">Model estimate &mdash; not a guaranteed fact</p>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Fake probability</span><strong>{{ result.fake_probability }}%</strong>
+            </div>
+            <div class="progress prob-progress">
+              <div class="progress-bar bar-fake" data-width="{{ result.fake_probability }}" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Genuine probability</span><strong>{{ result.genuine_probability }}%</strong>
+            </div>
+            <div class="progress prob-progress">
+              <div class="progress-bar bar-genuine" data-width="{{ result.genuine_probability }}" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <div class="mini-stat"><div class="mini-label">Confidence</div>
+                <div class="mini-value">{{ result.confidence }}% <small>({{ result.confidence_level }})</small></div></div>
+            </div>
+            <div class="col-6">
+              <div class="mini-stat"><div class="mini-label">Fake-account risk</div>
+                <div class="mini-value">{{ result.risk_level }}</div></div>
+            </div>
+          </div>
+
+          <h2 class="h6 text-uppercase text-muted">Explanation</h2>
+          <p class="mb-3">{{ result.explanation }}</p>
+          <p class="small text-muted mb-0"><i class="bi bi-lightbulb"></i> {{ result.probability_note }}</p>
+        </div>
+      </div>
+
+      <!-- ---------- Chart ---------- -->
+      <div class="col-lg-5 reveal">
+        <div class="glass-card h-100 text-center">
+          <h2 class="h6 text-uppercase text-muted mb-3">Probability split</h2>
+          <div class="chart-box chart-box-sm">
+            <canvas id="probabilityChart" data-fake="{{ result.fake_probability }}" data-genuine="{{ result.genuine_probability }}"></canvas>
+          </div>
+          <div class="small text-muted mt-3">Share of the model's decision trees that point to each answer.</div>
+        </div>
+      </div>
+
+      <!-- ---------- Indicators ---------- -->
+      <div class="col-12 reveal">
+        <div class="glass-card">
+          <h2 class="h5 mb-1"><i class="bi bi-flag"></i> Important account indicators</h2>
+          <p class="small text-muted mb-4">Simple rules of thumb that help you read the result. They are not the exact reasoning of the model.</p>
+          <div class="row g-3">
+            {% for item in result.indicators %}
+            <div class="col-md-6 col-xl-4">
+              <div class="indicator indicator-{{ item.signal }}">
+                <div class="indicator-icon">
+                  {% if item.signal == 'suspicious' %}<i class="bi bi-exclamation-triangle-fill"></i>
+                  {% elif item.signal == 'healthy' %}<i class="bi bi-check-circle-fill"></i>
+                  {% else %}<i class="bi bi-dash-circle-fill"></i>{% endif %}
+                </div>
+                <div>
+                  <div class="indicator-name">{{ item.name }}</div>
+                  <div class="indicator-value">{{ item.value }}</div>
+                  <div class="indicator-note">{{ item.note }}</div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- Calculated features ---------- -->
+      <div class="col-lg-6 reveal">
+        <div class="glass-card h-100">
+          <h2 class="h5 mb-3"><i class="bi bi-calculator"></i> Calculated features</h2>
+          <ul class="detail-list">
+            <li><span>Followers-to-following ratio</span><strong>{{ '%.2f'|format(result.derived.followers_following_ratio) }}</strong></li>
+            <li><span>Posts per day</span><strong>{{ '%.3f'|format(result.derived.posts_per_day) }}</strong></li>
+            <li><span>Engagement rate</span><strong>{{ '%.2f'|format(result.derived.engagement_rate) }}%</strong></li>
+            <li><span>Username length</span><strong>{{ account.username_length }}</strong></li>
+            <li><span>Digits in username</span><strong>{{ account.username_digits }}</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ---------- Top model features ---------- -->
+      <div class="col-lg-6 reveal">
+        <div class="glass-card h-100">
+          <h2 class="h5 mb-1"><i class="bi bi-bar-chart-line"></i> What the model values most</h2>
+          <p class="small text-muted mb-3">The five features with the biggest influence across all predictions.</p>
+          {% for feature in result.top_features %}
+          <div class="mb-2">
+            <div class="d-flex justify-content-between small"><span>{{ feature.label }}</span><strong>{{ feature.importance_pct }}%</strong></div>
+            <div class="progress prob-progress thin"><div class="progress-bar bar-accent" data-width="{{ feature.importance_pct * 3 }}" style="width: 0%"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- ---------- Disclaimer + actions ---------- -->
+      <div class="col-12 reveal">
+        <div class="alert alert-info-soft" role="note">
+          <i class="bi bi-shield-exclamation"></i>
+          <strong>Please note:</strong> this model was trained on synthetic (computer-generated) data. The result is a
+          statistical estimate and can be wrong. Do not use it alone to judge, report, or accuse a real account or person.
+        </div>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{{ url_for('index') }}#analyze" class="btn btn-gradient"><i class="bi bi-arrow-repeat"></i> Analyze another account</a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-glow"><i class="bi bi-speedometer2"></i> View dashboard</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block vendor_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% endblock %}
